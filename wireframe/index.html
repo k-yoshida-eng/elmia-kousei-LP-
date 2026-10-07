@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>elmia LP ワイヤーフレーム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+1:wght@400;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 左に注記レール、右にLP本体の箱。SP/PC幅を切り替えて確認する設計図 */
+:root {
+  --bg: #eef0f2;        /* 作業台 */
+  --paper: #ffffff;     /* LP本体 */
+  --block: #d9dde2;     /* 画像や要素の箱 */
+  --line: #a9b0b8;      /* 枠線 */
+  --ink: #23282e;       /* 文字 */
+  --muted: #69727c;     /* 補足文字 */
+  --note: #2f6fb0;      /* 注記の青（設計図の赤入れ代わり） */
+  --note-bg: #e3edf7;
+  --font-body: "M PLUS 1", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15181c; --paper: #1e2227; --block: #2e343b; --line: #4a525c;
+    --ink: #e4e7ea; --muted: #9aa3ad; --note: #7fb1e6; --note-bg: #1c2a3a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15181c; --paper: #1e2227; --block: #2e343b; --line: #4a525c;
+  --ink: #e4e7ea; --muted: #9aa3ad; --note: #7fb1e6; --note-bg: #1c2a3a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* ツールバー */
+.toolbar {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 10px 16px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.toolbar h1 { margin: 0; font-size: 15px; font-weight: 800; }
+.toolbar .meta { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.toolbar .spacer { flex: 1; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button {
+  font: inherit; font-size: 13px; padding: 4px 12px; border: 0; cursor: pointer;
+  background: transparent; color: var(--ink);
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.seg button:focus-visible, .toggle:focus-visible { outline: 2px solid var(--note); outline-offset: 2px; }
+.toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+
+/* 作業台 */
+.stage { padding: 24px 16px 64px; }
+.frame {
+  margin: 0 auto;
+  max-width: 1080px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  transition: max-width .25s ease;
+}
+.stage[data-view="sp"] .frame { max-width: 390px; }
+@media (prefers-reduced-motion: reduce) { .frame { transition: none; } }
+
+/* セクション共通 */
+.sec { position: relative; padding: 48px 24px; border-top: 1px dashed var(--line); }
+.sec:first-child { border-top: 0; }
+.inner { max-width: 880px; margin: 0 auto; display: grid; gap: 20px; }
+.sec h2 { margin: 0; font-size: 24px; font-weight: 800; text-align: center; text-wrap: balance; }
+.sec .lead { margin: 0; text-align: center; color: var(--muted); }
+.alt { background: var(--bg); }
+
+/* 注記ラベル */
+.tag {
+  display: inline-flex; align-items: baseline; gap: 8px;
+  position: absolute; top: 8px; left: 8px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em;
+  color: var(--note); background: var(--note-bg);
+  padding: 2px 8px; border-radius: 4px;
+}
+.note {
+  font-size: 12.5px; line-height: 1.6; color: var(--note);
+  background: var(--note-bg); border-left: 3px solid var(--note);
+  padding: 8px 12px; margin: 0;
+}
+body.hide-notes .tag, body.hide-notes .note { display: none; }
+
+/* 部品 */
+.ph {
+  background: var(--block);
+  border: 1px solid var(--line);
+  display: grid; place-items: center;
+  color: var(--muted); font-size: 12px; font-family: var(--font-mono);
+  text-align: center; padding: 8px;
+  position: relative; overflow: hidden;
+}
+.ph::before, .ph::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to top right, transparent calc(50% - .5px), var(--line) 50%, transparent calc(50% + .5px));
+  pointer-events: none;
+}
+.ph::after { transform: scaleX(-1); }
+.ph span { position: relative; z-index: 1; background: var(--block); padding: 0 6px; }
+.btn {
+  display: block; width: 100%; max-width: 360px; margin: 0 auto;
+  padding: 16px; border-radius: 999px; border: 2px solid var(--ink);
+  background: var(--ink); color: var(--paper);
+  font: inherit; font-weight: 700; text-align: center;
+}
+.btn small { display: block; font-weight: 400; font-size: 11px; opacity: .8; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.stage[data-view="sp"] .grid { grid-template-columns: 1fr; }
+.card { border: 1px solid var(--line); padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.card h3 { margin: 0; font-size: 16px; }
+.card p { margin: 0; color: var(--muted); font-size: 14px; }
+.badge { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+/* FV */
+.fv { padding-top: 56px; }
+.fv .inner { grid-template-columns: 1.1fr 1fr; align-items: center; gap: 28px; }
+.stage[data-view="sp"] .fv .inner { grid-template-columns: 1fr; }
+.fv .copy { display: grid; gap: 14px; min-width: 0; }
+.fv .eyebrow { font-size: 13px; color: var(--muted); margin: 0; }
+.fv h2 { text-align: left; font-size: 32px; line-height: 1.35; }
+.fv .sub { margin: 0; }
+.fv .btn { margin: 0; }
+.stage[data-view="sp"] .fv .btn { margin: 0 auto; }
+.points { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.points li { border: 1px solid var(--line); padding: 2px 10px; font-size: 13px; }
+
+/* 悩み */
+.worries { list-style: none; margin: 0 auto; padding: 0; display: grid; gap: 10px; max-width: 560px; width: 100%; }
+.worries li { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); background: var(--paper); padding: 12px 14px; }
+.worries li::before { content: "□"; color: var(--muted); }
+.arrow { text-align: center; color: var(--muted); font-size: 20px; }
+
+/* 実績数字 */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stat { border: 1px solid var(--line); padding: 14px 8px; text-align: center; min-width: 0; }
+.stat b { display: block; font-size: 26px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12px; color: var(--muted); }
+
+/* 声 */
+.voice { display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: start; }
+.voice .ph { width: 56px; height: 56px; border-radius: 50%; }
+.voice .ph::before, .voice .ph::after { display: none; }
+
+/* 流れ */
+.flow { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(4, 1fr); counter-reset: step; }
+.stage[data-view="sp"] .flow { grid-template-columns: 1fr; }
+.flow li { border: 1px solid var(--line); padding: 14px; counter-increment: step; display: grid; gap: 4px; min-width: 0; }
+.flow li::before { content: "STEP " counter(step); font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+/* 料金 */
+.price { border: 2px solid var(--ink); padding: 20px; max-width: 480px; width: 100%; margin: 0 auto; display: grid; gap: 8px; text-align: center; }
+.price b { font-size: 28px; font-variant-numeric: tabular-nums; }
+
+/* FAQ */
+.faq { display: grid; gap: 8px; max-width: 720px; width: 100%; margin: 0 auto; }
+.faq details { border: 1px solid var(--line); padding: 12px 16px; background: var(--paper); }
+.faq summary { cursor: pointer; font-weight: 700; }
+.faq p { margin: 8px 0 0; color: var(--muted); }
+
+/* フォーム */
+.form { display: grid; gap: 14px; max-width: 560px; width: 100%; margin: 0 auto; }
+.form label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; }
+.form .req { font-weight: 400; color: var(--muted); font-size: 11px; margin-left: 6px; }
+.form input, .form select, .form textarea {
+  font: inherit; padding: 10px 12px; border: 1px solid var(--line);
+  background: var(--paper); color: var(--ink); width: 100%;
+}
+.form textarea { min-height: 96px; resize: vertical; }
+
+/* 追従CTA（SP） */
+.sticky-cta {
+  display: none;
+  position: sticky; bottom: 0;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--paper); border-top: 1px solid var(--line);
+}
+.stage[data-view="sp"] .sticky-cta { display: block; }
+.sticky-cta .btn { padding: 12px; }
+
+footer.lp-foot { padding: 24px; text-align: center; font-size: 12px; color: var(--muted); border-top: 1px dashed var(--line); }
+
+@media (max-width: 640px) {
+  .fv .inner { grid-template-columns: 1fr; }
+  .fv h2 { font-size: 26px; }
+  .flow { grid-template-columns: 1fr; }
+  .stats b { font-size: 22px; }
+  .sec { padding: 44px 16px; }
+  .sticky-cta { display: block; }
+}
+</style>
+</head>
+<body>
+
+<header class="toolbar">
+  <h1>LP ワイヤーフレーム</h1>
+  <span class="meta">v0.1 / 2026-10-07</span>
+  <span class="spacer"></span>
+  <div class="seg" role="group" aria-label="表示幅">
+    <button type="button" id="view-sp" data-view="sp" aria-pressed="true">SP 390px</button>
+    <button type="button" id="view-pc" data-view="pc" aria-pressed="false">PC 1080px</button>
+  </div>
+  <label class="toggle"><input type="checkbox" id="show-notes" checked> 注記を表示</label>
+</header>
+
+<main class="stage" id="stage" data-view="sp">
+  <div class="frame">
+
+    <!-- 01 ファーストビュー -->
+    <section class="sec fv" id="fv">
+      <span class="tag">01 ファーストビュー</span>
+      <div class="inner">
+        <div class="copy">
+          <p class="eyebrow">【対象者】の方へ ／ 秋田の【業種】向け</p>
+          <h2>【キャッチコピー：<br>得られる結果を1行で】</h2>
+          <p class="sub">【サブコピー：誰の、どんな悩みを、どう解決するかを2行以内で】</p>
+          <ul class="points">
+            <li>【強み1】</li><li>【強み2】</li><li>【実績数字】</li>
+          </ul>
+          <a class="btn" href="#form">【無料相談を予約する】<small>【所要時間や費用の不安を消す一言】</small></a>
+        </div>
+        <div class="ph" style="aspect-ratio: 4 / 3;"><span>メイン画像<br>（人物＋利用シーン）</span></div>
+        <p class="note">スクロールせずに「何のサービスか」「誰向けか」「次に何をすればいいか」が分かる状態にします。Instagram経由の流入を想定し、SPではコピーと画像の順を入れ替えて検討します。</p>
+      </div>
+    </section>
+
+    <!-- 02 悩み -->
+    <section class="sec alt" id="worries">
+      <span class="tag">02 悩みの提示</span>
+      <div class="inner">
+        <h2>こんなお悩みはありませんか？</h2>
+        <ul class="worries">
+          <li>【悩み1：ターゲットが実際に口にする言葉で】</li>
+          <li>【悩み2】</li>
+          <li>【悩み3】</li>
+          <li>【悩み4】</li>
+        </ul>
+        <div class="arrow" aria-hidden="true">▼</div>
+        <p class="lead">【その悩み、【サービス名】で解決できます】</p>
+        <p class="note">悩みは3〜5個にします。営業やDMで実際に聞いた言葉をそのまま使うと、読み手が自分ごととして受け取りやすくなります。</p>
+      </div>
+    </section>
+
+    <!-- 03 解決策 -->
+    <section class="sec" id="solution">
+      <span class="tag">03 サービス紹介</span>
+      <div class="inner">
+        <h2>【サービス名】とは</h2>
+        <p class="lead">【サービスの概要を2〜3文で】</p>
+        <div class="ph" style="aspect-ratio: 16 / 7;"><span>サービスの全体図 または 図解</span></div>
+        <p class="note">機能の説明より、導入後に何が変わるか（ベネフィット）を先に書きます。</p>
+      </div>
+    </section>
+
+    <!-- 04 選ばれる理由 -->
+    <section class="sec alt" id="reasons">
+      <span class="tag">04 選ばれる理由</span>
+      <div class="inner">
+        <h2>【サービス名】が選ばれる3つの理由</h2>
+        <div class="grid">
+          <div class="card"><span class="badge">理由 1</span><div class="ph" style="aspect-ratio: 3 / 2;"><span>アイコン or 写真</span></div><h3>【強みの見出し】</h3><p>【根拠となる説明を2〜3行】</p></div>
+          <div class="card"><span class="badge">理由 2</span><div class="ph" style="aspect-ratio: 3 / 2;"><span>アイコン or 写真</span></div><h3>【強みの見出し】</h3><p>【根拠となる説明を2〜3行】</p></div>
+          <div class="card"><span class="badge">理由 3</span><div class="ph" style="aspect-ratio: 3 / 2;"><span>アイコン or 写真</span></div><h3>【強みの見出し】</h3><p>【根拠となる説明を2〜3行】</p></div>
+        </div>
+        <a class="btn" href="#form">【無料相談を予約する】</a>
+        <p class="note">中盤のCTAです。ここで申し込む人も多いため、ボタンの文言はFVと揃えます。</p>
+      </div>
+    </section>
+
+    <!-- 05 実績・お客様の声 -->
+    <section class="sec" id="results">
+      <span class="tag">05 実績とお客様の声</span>
+      <div class="inner">
+        <h2>導入実績</h2>
+        <div class="stats">
+          <div class="stat"><b>【00】社</b><span>【導入企業数】</span></div>
+          <div class="stat"><b>【00】%</b><span>【継続率など】</span></div>
+          <div class="stat"><b>【00】名</b><span>【採用数など】</span></div>
+        </div>
+        <div class="grid">
+          <div class="card voice"><div class="ph"><span>顔</span></div><div><h3>【変化が分かる一言】</h3><p>【業種】【会社名 or イニシャル】様<br>【導入前の状態と導入後の変化を3行ほど】</p></div></div>
+          <div class="card voice"><div class="ph"><span>顔</span></div><div><h3>【変化が分かる一言】</h3><p>【業種】【会社名 or イニシャル】様<br>【導入前の状態と導入後の変化を3行ほど】</p></div></div>
+        </div>
+        <div class="ph" style="height: 56px;"><span>取引先ロゴ一覧（掲載許可が取れたもののみ）</span></div>
+        <p class="note">顧客名やロゴは掲載許可を取ったものだけを使います。許可が取れない場合は「秋田市 飲食業 A社様」のように匿名にします。</p>
+      </div>
+    </section>
+
+    <!-- 06 流れ・料金 -->
+    <section class="sec alt" id="flow">
+      <span class="tag">06 ご利用の流れと料金</span>
+      <div class="inner">
+        <h2>ご利用の流れ</h2>
+        <ol class="flow">
+          <li><strong>無料相談</strong><span class="badge">【オンライン 30分】</span></li>
+          <li><strong>ご提案</strong><span class="badge">【1週間以内】</span></li>
+          <li><strong>ご契約</strong><span class="badge">【内容】</span></li>
+          <li><strong>運用開始</strong><span class="badge">【内容】</span></li>
+        </ol>
+        <h2>料金</h2>
+        <div class="price">
+          <span class="badge">【プラン名】</span>
+          <b>月額【00,000】円〜</b>
+          <span class="lead">【含まれる内容／税表記】</span>
+        </div>
+        <p class="note">料金を出さない場合は「ご予算に合わせてご提案します」とし、目安だけでも示すと問い合わせの心理的なハードルが下がります。</p>
+      </div>
+    </section>
+
+    <!-- 07 FAQ -->
+    <section class="sec" id="faq">
+      <span class="tag">07 よくある質問</span>
+      <div class="inner">
+        <h2>よくある質問</h2>
+        <div class="faq">
+          <details open><summary>Q. 【秋田県外でも対応できますか？】</summary><p>A. 【回答】</p></details>
+          <details><summary>Q. 【契約期間の縛りはありますか？】</summary><p>A. 【回答】</p></details>
+          <details><summary>Q. 【相談だけでも大丈夫ですか？】</summary><p>A. 【回答】</p></details>
+          <details><summary>Q. 【どのくらいで成果が出ますか？】</summary><p>A. 【回答】</p></details>
+        </div>
+        <p class="note">申込み直前の迷い（費用、期間、手間、地域）を潰す質問を選びます。</p>
+      </div>
+    </section>
+
+    <!-- 08 フォーム -->
+    <section class="sec alt" id="form">
+      <span class="tag">08 CTA（申込みフォーム）</span>
+      <div class="inner">
+        <h2>【まずは無料でご相談ください】</h2>
+        <p class="lead">【返信までの目安：2営業日以内にご連絡します】</p>
+        <form class="form" id="contact-form">
+          <label for="f-company">会社名<span class="req">必須</span><input id="f-company" type="text" placeholder="株式会社〇〇"></label>
+          <label for="f-name">お名前<span class="req">必須</span><input id="f-name" type="text" placeholder="秋田 太郎"></label>
+          <label for="f-email">メールアドレス<span class="req">必須</span><input id="f-email" type="email" placeholder="taro@example.jp"></label>
+          <label for="f-tel">電話番号<span class="req">任意</span><input id="f-tel" type="tel" placeholder="018-000-0000"></label>
+          <label for="f-topic">ご相談内容<span class="req">必須</span>
+            <select id="f-topic"><option>【選択肢1】</option><option>【選択肢2】</option><option>その他</option></select>
+          </label>
+          <label for="f-msg">詳細<span class="req">任意</span><textarea id="f-msg" placeholder="【記入例】"></textarea></label>
+          <button class="btn" type="submit">【送信する】</button>
+        </form>
+        <p class="note">項目は最小限にします。1項目増えるごとに離脱が増えるため、必須は4〜5個までを目安にします。LINE登録をゴールにする場合はフォームをLINEボタンに置き換えます。</p>
+      </div>
+    </section>
+
+    <footer class="lp-foot">株式会社elmia ／ 秋田県【所在地】 ／ プライバシーポリシー</footer>
+
+    <div class="sticky-cta"><a class="btn" href="#form">【無料相談を予約する】</a></div>
+  </div>
+</main>
+
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var buttons = document.querySelectorAll('.seg button');
+  function setView(v) {
+    stage.dataset.view = v;
+    buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === v)); });
+    try { localStorage.setItem('wf-view', v); } catch (e) {}
+  }
+  buttons.forEach(function (b) { b.addEventListener('click', function () { setView(b.dataset.view); }); });
+  try { var saved = localStorage.getItem('wf-view'); if (saved) setView(saved); } catch (e) {}
+
+  var notes = document.getElementById('show-notes');
+  notes.addEventListener('change', function () { document.body.classList.toggle('hide-notes', !notes.checked); });
+
+  document.getElementById('contact-form').addEventListener('submit', function (e) { e.preventDefault(); });
+})();
+</script>
+</body>
+</html>
